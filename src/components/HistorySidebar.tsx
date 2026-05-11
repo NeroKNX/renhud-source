@@ -11,9 +11,10 @@ interface HistorySidebarProps {
   onSelectSession: (id: string) => void;
   onDeleteSession: (id: string) => void;
   onRenameSession: (id: string, title: string) => void;
+  onToggleFavorite: (id: string) => void;
 }
 
-export function HistorySidebar({ isOpen, onClose, sessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession }: HistorySidebarProps) {
+export function HistorySidebar({ isOpen, onClose, sessions, currentSessionId, onSelectSession, onDeleteSession, onRenameSession, onToggleFavorite }: HistorySidebarProps) {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -134,10 +135,22 @@ export function HistorySidebar({ isOpen, onClose, sessions, currentSessionId, on
                     ) : (
                       <>
                         <div className="flex items-center justify-between">
-                          <p className="text-sm font-mono text-gray-200 truncate flex-1">
-                            {session.isFavorite && '⭐ '}{session.title}
-                          </p>
-                          <div className="flex gap-1 opacity-0 hover:opacity-100 group-hover:opacity-100 transition-opacity ml-2">
+                          <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                            {session.isFavorite && (
+                              <svg width="12" height="12" viewBox="0 0 24 24" fill="#eab308" stroke="#eab308" strokeWidth="2" className="flex-shrink-0"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            )}
+                            <p className="text-sm font-mono text-gray-200 truncate">
+                              {session.title}
+                            </p>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity ml-2">
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onToggleFavorite(session.id); }}
+                              className={`p-1 hover:bg-[#2d3250] rounded transition-colors ${session.isFavorite ? 'text-yellow-400' : 'text-gray-500 hover:text-yellow-400'}`}
+                              title={session.isFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+                            >
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill={session.isFavorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                            </button>
                             <button
                               onClick={(e) => handleStartEdit(e, session)}
                               className="p-1 hover:bg-[#2d3250] rounded text-gray-500 hover:text-gray-300"

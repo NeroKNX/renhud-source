@@ -14,7 +14,7 @@ export interface ChatRequest {
   deep: boolean;
   history: { role: string; content: string }[];
   active_skill?: string;
-  files?: null;
+  files?: { name: string; type: string; data: string }[] | null;
 }
 
 export interface ChatResponse {
