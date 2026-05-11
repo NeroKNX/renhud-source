@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+/* Custom scrollbar for chat area */
+.ren-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.ren-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.ren-scrollbar::-webkit-scrollbar-thumb {
+  background: #252942;
+  border-radius: 3px;
+}
+
+/* Typing cursor animation */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: #818cf8;
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s infinite;
+}
