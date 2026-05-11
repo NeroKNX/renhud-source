@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notas de REN</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f1018;
+      --card: #16192a;
+      --border: #252942;
+      --text: #e5e5e5;
+      --text-dim: #9ca3af;
+      --accent: #818cf8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; min-height: 100vh; padding: 2rem; }
+    .container { max-width: 720px; margin: 0 auto; }
+    h1 { font-size: 1.5rem; margin-bottom: 0.5rem; text-align: center; }
+    .version { color: var(--accent); font-size: 0.75rem; text-align: center; margin-bottom: 2rem; }
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: 1rem; padding: 1.5rem; margin-bottom: 1rem; }
+    h3 { font-size: 0.9rem; margin-bottom: 0.5rem; }
+    p { color: var(--text-dim); font-size: 0.8rem; line-height: 1.6; margin-bottom: 0.5rem; }
+    ul { padding-left: 1.5rem; margin: 0.5rem 0; }
+    li { color: var(--text-dim); font-size: 0.8rem; line-height: 1.6; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .footer { text-align: center; color: var(--text-dim); font-size: 0.7rem; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📝 Notas de REN</h1>
+    <p class="version">v1.0</p>
+
+    <div class="card">
+      <h3>¿Qué es REN?</h3>
+      <p>REN es un asistente clínico inteligente potenciado por IA, diseñado para ayudar con tareas médicas y de documentación clínica.</p>
+    </div>
+
+    <div class="card">
+      <h3>Funcionalidades</h3>
+      <ul>
+        <li>Chat con modelos avanzados (modo Deep para preguntas complejas)</li>
+        <li>Skills personalizables para tareas específicas</li>
+        <li>Historial de conversaciones con búsqueda</li>
+        <li>Exportación de sesiones a JSON</li>
+        <li>Adjuntos de archivos (imágenes, PDFs, audio, video)</li>
+        <li>Atajos de teclado (presiona ? para verlos)</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h3>Atajos de teclado</h3>
+      <ul>
+        <li><strong>Ctrl+K</strong> — Nuevo chat</li>
+        <li><strong>Ctrl+H</strong> — Abrir historial</li>
+        <li><strong>Ctrl+E</strong> — Exportar sesión como JSON</li>
+        <li><strong>Ctrl+Backspace</strong> — Eliminar último mensaje</li>
+        <li><strong>?</strong> — Mostrar todos los atajos</li>
+        <li><strong>Esc</strong> — Cerrar paneles</li>
+      </ul>
+    </div>
+
+    <p class="footer">REN &mdash; Asistente clínico inteligente</p>
+  </div>
+</body>
+</html>
