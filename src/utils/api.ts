@@ -19,6 +19,7 @@ export interface ChatRequest {
 
 export interface ChatResponse {
   text: string;
+  model?: string;
 }
 
 export interface Session {

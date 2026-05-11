@@ -11,21 +11,46 @@ interface ChatInputProps {
   disabled?: boolean;
   isDeep: boolean;
   onToggleDeep: () => void;
+  sessionId?: string;
+  onSaveDraft?: (sessionId: string, text: string) => void;
+  onClearDraft?: (sessionId: string) => void;
+  getDraft?: (sessionId: string) => string;
 }
 
-export function ChatInput({ onSend, disabled, isDeep, onToggleDeep }: ChatInputProps) {
-  const [text, setText] = useState('');
+export function ChatInput({ onSend, disabled, isDeep, onToggleDeep, sessionId, onSaveDraft, onClearDraft, getDraft }: ChatInputProps) {
+  const [text, setText] = useState(() => {
+    if (sessionId && getDraft) return getDraft(sessionId);
+    return '';
+  });
   const [attachedFiles, setAttachedFiles] = useState<File[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(true);
+  const [isFocused, setIsFocused] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { inputRef.current?.focus(); }, []);
+  useEffect(() => {
+    const hasHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    const hasKeyboard = !('ontouchstart' in window) || navigator.maxTouchPoints === 0;
+    setIsTouchDevice(!(hasHover || hasKeyboard));
+  }, []);
+
+  useEffect(() => { textareaRef.current?.focus(); }, []);
+
+  useEffect(() => {
+    if (sessionId && onSaveDraft && text) onSaveDraft(sessionId, text);
+  }, [text, sessionId]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
+    }
+  }, [text]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const valid = files.filter(f => {
-      const ok = f.type.startsWith('image/') || f.type.startsWith('audio/') ||
-        f.type.startsWith('video/') || f.type === 'application/pdf' || f.type.startsWith('text/');
+      const ok = f.type.startsWith('image/') || f.type.startsWith('audio/') || f.type.startsWith('video/') || f.type === 'application/pdf' || f.type.startsWith('text/');
       return ok && f.size <= 50 * 1024 * 1024;
     });
     setAttachedFiles(prev => [...prev, ...valid]);
@@ -38,12 +63,8 @@ export function ChatInput({ onSend, disabled, isDeep, onToggleDeep }: ChatInputP
     return Promise.all(files.map(f =>
       new Promise<FileAttachment>((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve({ name: f.name, type: f.type, data: base64 });
-        };
-        reader.onerror = reject;
-        reader.readAsDataURL(f);
+        reader.onload = () => { const b64 = (reader.result as string).split(',')[1]; resolve({ name: f.name, type: f.type, data: b64 }); };
+        reader.onerror = reject; reader.readAsDataURL(f);
       })
     ));
   };
@@ -54,11 +75,12 @@ export function ChatInput({ onSend, disabled, isDeep, onToggleDeep }: ChatInputP
     let fileAttachments: FileAttachment[] | undefined;
     if (attachedFiles.length > 0) fileAttachments = await convertFiles(attachedFiles);
     onSend(text, isDeep, fileAttachments);
-    setText('');
-    setAttachedFiles([]);
+    setText(''); setAttachedFiles([]);
+    if (sessionId && onClearDraft) onClearDraft(sessionId);
+    if (textareaRef.current) { textareaRef.current.style.height = 'auto'; textareaRef.current.blur(); }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
 
@@ -87,10 +109,10 @@ export function ChatInput({ onSend, disabled, isDeep, onToggleDeep }: ChatInputP
       )}
 
       <form onSubmit={handleSubmit}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-end gap-2">
           <input ref={fileInputRef} type="file" accept="image/*,audio/*,video/*,.pdf,.txt" multiple onChange={handleFileSelect} className="hidden" />
           <button type="button" onClick={() => fileInputRef.current?.click()} disabled={disabled}
-            className="p-1.5 sm:p-2 rounded-lg border border-transparent hover:border-[var(--ren-border-light)] text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50"
+            className="p-1.5 sm:p-2 rounded-lg border border-transparent hover:border-[var(--ren-border-light)] text-gray-400 hover:text-gray-300 transition-colors disabled:opacity-50 pb-0.5"
             title="Adjuntar archivo">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[18px] sm:h-[18px]">
               <path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
@@ -106,21 +128,36 @@ export function ChatInput({ onSend, disabled, isDeep, onToggleDeep }: ChatInputP
           >🧠</button>
 
           <div className="flex-1 border rounded-xl px-4 py-2.5 transition-colors focus-within:border-[#4f46e5]/50"
-            style={{ backgroundColor: 'var(--ren-bg-input)', borderColor: 'var(--ren-border-input)' }}>
-            <input ref={inputRef} type="text" value={text} onChange={(e) => setText(e.target.value)}
-              onKeyDown={handleKeyDown} disabled={disabled}
+            style={{ backgroundColor: 'var(--ren-bg-input)', borderColor: isFocused ? '#4f46e5' : 'var(--ren-border-input)' }}>
+            <textarea
+              ref={textareaRef}
+              value={text}
+              onChange={e => setText(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              disabled={disabled}
               placeholder="Escribe un mensaje..."
-              className="w-full bg-transparent text-xs sm:text-sm font-mono text-gray-100 placeholder-gray-500 outline-none" />
+              rows={1}
+              className="w-full bg-transparent outline-none text-sm sm:text-base text-gray-100 placeholder-gray-600 resize-none disabled:opacity-50 min-w-0"
+            />
           </div>
 
           <button type="submit" disabled={(!text.trim() && attachedFiles.length === 0) || disabled}
-            className="p-2 sm:p-2.5 rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors shadow-[0_0_10px_rgba(79,70,229,0.3)] disabled:opacity-30">
+            className="p-2 sm:p-2.5 rounded-lg bg-[#4f46e5] hover:bg-[#4338ca] text-white transition-colors shadow-[0_0_10px_rgba(79,70,229,0.3)] disabled:opacity-30 pb-0.5">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="sm:w-[18px] sm:h-[18px]">
               <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
             </svg>
           </button>
         </div>
       </form>
+
+      {!isTouchDevice && (
+        <p className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center font-mono px-2">
+          <span className="hidden sm:inline">Presiona <kbd className="px-1.5 py-0.5 border rounded text-gray-400" style={{ backgroundColor: 'var(--ren-bg-hover)', borderColor: 'var(--ren-border-light)' }}>Enter</kbd> para enviar, <kbd className="px-1.5 py-0.5 border rounded text-gray-400" style={{ backgroundColor: 'var(--ren-bg-hover)', borderColor: 'var(--ren-border-light)' }}>Shift + Enter</kbd> para nueva línea</span>
+          <span className="sm:hidden">Enter: enviar | Shift+Enter: nueva línea</span>
+        </p>
+      )}
     </div>
   );
 }

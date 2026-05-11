@@ -13,6 +13,7 @@ import { EmptyState } from '@/components/EmptyState';
 import { useSessions, type Message } from '@/hooks/useSessions';
 import { sendChat, createSession as apiCreateSession } from '@/utils/api';
 import { getUser, getUserId } from '@/utils/store';
+import { PreferencesManager, fontSizes } from '@/utils/preferences';
 
 interface FileAttachment { name: string; type: string; data: string; }
 
@@ -56,10 +57,20 @@ export function ChatPage() {
     setUserName(user.name || 'Usuario');
     setIsGuestMode(user.isGuest === true);
     document.documentElement.classList.add('dark');
-    const fs = localStorage.getItem('ren_font_size');
-    if (fs) document.documentElement.style.fontSize = ({ small: '12px', medium: '14px', large: '16px' } as const)[fs as string] || '14px';
-    const theme = localStorage.getItem('ren_theme') || 'dark';
-    if (theme === 'light') { document.documentElement.classList.remove('dark'); document.documentElement.setAttribute('data-theme', 'light'); }
+
+    const prefs = PreferencesManager.get();
+    document.documentElement.style.setProperty('--base-font-size', fontSizes[prefs.fontSize]);
+    if (prefs.theme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+
+    PreferencesManager.loadFromServer().then(() => {
+      const fresh = PreferencesManager.get();
+      document.documentElement.style.setProperty('--base-font-size', fontSizes[fresh.fontSize]);
+      if (fresh.theme === 'light') { document.documentElement.classList.remove('dark'); document.documentElement.setAttribute('data-theme', 'light'); }
+      else { document.documentElement.classList.add('dark'); document.documentElement.setAttribute('data-theme', 'dark'); }
+    });
   }, [navigate]);
 
   useEffect(() => {
@@ -155,6 +166,14 @@ export function ChatPage() {
   const handleTypingComplete = useCallback(() => {
     if (typingMessage) { setMessages(prev => [...prev, typingMessage]); setTypingMessage(null); setIsTyping(false); }
   }, [typingMessage]);
+
+  // Notification sound when AI message completes
+  useEffect(() => {
+    if (!isTyping && typingMessage === null && messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (!last.isUser) PreferencesManager.playNotificationSound();
+    }
+  }, [isTyping, typingMessage, messages]);
 
   const handleEditMessage = useCallback(async (messageId: string, newText: string) => {
     setMessages(prev => {
@@ -296,7 +315,16 @@ export function ChatPage() {
             <div ref={chatEndRef} />
           </div>
 
-          <ChatInput onSend={handleSendMessage} disabled={isTyping} isDeep={isDeep} onToggleDeep={() => setIsDeep(d => !d)} />
+          <ChatInput
+            onSend={handleSendMessage}
+            disabled={isTyping}
+            isDeep={isDeep}
+            onToggleDeep={() => setIsDeep(d => !d)}
+            sessionId={currentSessionId}
+            onSaveDraft={PreferencesManager.saveDraft}
+            onClearDraft={PreferencesManager.clearDraft}
+            getDraft={PreferencesManager.getDraft}
+          />
         </div>
       </div>
 
